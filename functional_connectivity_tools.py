@@ -1,43 +1,43 @@
 import mne
 from mne_connectivity import spectral_connectivity_epochs
 import networkx as nx
-import network_tools as nt
-from netgraph import Graph
+#import network_tools as nt
+#from netgraph import Graph
 
 import warnings
 warnings.filterwarnings("ignore")
 
-import connectivipy as cp
+#import connectivipy as cp
 
 from mne import create_info,Annotations
 from mne.io import RawArray
 
-from tkinter import Tk,Toplevel,Label,DoubleVar,TOP,BOTH,Frame,Button,messagebox
-from tkinter.ttk import Progressbar
+#from tkinter import Tk,Toplevel,Label,DoubleVar,TOP,BOTH,Frame,Button,messagebox
+#from tkinter.ttk import Progressbar
 import numpy as np
 
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-plt.rcParams["figure.figsize"] = (10,8)
-
-
-from kneed import KneeLocator
-from sklearn.datasets import make_blobs
-from sklearn.cluster import KMeans,AffinityPropagation
-from sklearn.preprocessing import StandardScaler
-from sklearn import preprocessing
-
-from scipy.signal import hamming
-
-#from network_tools import louvain, leiden
-
-from sklearn.metrics.cluster import adjusted_rand_score
-
-from utils.general import font_size, PSD
-#from utils.animation_tools import heatplot_centrality_animation_combined
-from utils.centrality_scores import generalized_degree_centrality
+##import matplotlib.pyplot as plt
+##from matplotlib.figure import Figure
+##from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+##from mpl_toolkits.axes_grid1 import make_axes_locatable
+##plt.rcParams["figure.figsize"] = (10,8)
+##
+##
+##from kneed import KneeLocator
+##from sklearn.datasets import make_blobs
+##from sklearn.cluster import KMeans,AffinityPropagation
+##from sklearn.preprocessing import StandardScaler
+##from sklearn import preprocessing
+##
+##from scipy.signal import hamming
+##
+###from network_tools import louvain, leiden
+##
+##from sklearn.metrics.cluster import adjusted_rand_score
+##
+##from utils.general import font_size, PSD
+###from utils.animation_tools import heatplot_centrality_animation_combined
+##from utils.centrality_scores import generalized_degree_centrality
 
 def symmeterize(A):
     #Return a symmetrized version of NumPy lower-triangular array A with 1's along diagonal.
@@ -45,13 +45,7 @@ def symmeterize(A):
     return A + A.T - np.diag(A.diagonal())
 
 
-
 def coherence_at_mark(eeg):
-    #if eeg.fig.mne.segment_loc==0: ### ENSURE SEGMENT SELECTED
-    #        messagebox.showerror("Error","Select time point in recording!")
-    #        error=True
-
-    eeg.segment_loc=eeg.fig.mne.segment_loc
     time_mark= eeg.segment_loc
 
     bads=eeg.fig.mne.info['bads'] # get current set of bad channels from figure
@@ -68,42 +62,43 @@ def coherence_at_mark(eeg):
     fmin=eeg.fmin_value
     fmax=eeg.fmax_value
 
-
     Nc=len(channels)
     data_win=np.expand_dims(data, axis=0)
 
     Coh=spectral_connectivity_epochs(data_win,sfreq=fs, method='coh', mode='multitaper', fmin=fmin, fmax=fmax, faverage=True )
     S=symmeterize(np.reshape(Coh.get_data(), (Nc,Nc)))
 
-    fig, ax = plt.subplots(2)
+    return S
 
-    plot_window = Toplevel(bg="lightgray")
-    plot_window.geometry('1400x900')
-    plot_window.wm_title('')
-    plot_window.attributes('-topmost', 'true')
-
-    canvas = FigureCanvasTkAgg(fig, master=plot_window)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=TOP,fill=BOTH,expand=1)
-
-    heatmap=ax[0].imshow(S,vmin=0, vmax=1, cmap='coolwarm', aspect='auto')
-
-    ax[0].set_xticks(range(Nc))
-    ax[0].set_xticklabels(channels,fontsize=font_size(channels))
-    ax[0].set_yticks(range(Nc))
-    ax[0].set_yticklabels(channels,fontsize=font_size(channels))
-
-    ax_divider = make_axes_locatable(ax[0])
-    cax = ax_divider.append_axes('right', size='7%', pad='2%')
-    cb = fig.colorbar(heatmap, cax=cax, orientation='vertical')
-
-    G,community_labels,node_to_community,labels_dict,node_color=nt.Graph_communities_params(S,channels)
-
-    # See https://github.com/paulbrodersen/netgraph/blob/master/netgraph/_main.py for options
-    Graph(G,ax=ax[1],node_size=5,node_label_offset=.1,node_color=node_color, node_labels=labels_dict,node_edge_width=0, edge_alpha=0.1, node_layout='community', node_layout_kwargs=dict(node_to_community=node_to_community),
-    edge_layout='bundled', edge_layout_kwargs=dict(k=2000))
-
-    fig.suptitle('Coherence in Small Window Centered at t= '+str(np.round(time_mark,2))+ ' sec \n Coherence Communities: '+str(community_labels), fontsize=12)
+##    fig, ax = plt.subplots(2)
+##
+##    plot_window = Toplevel(bg="lightgray")
+##    plot_window.geometry('1400x900')
+##    plot_window.wm_title('')
+##    plot_window.attributes('-topmost', 'true')
+##
+##    canvas = FigureCanvasTkAgg(fig, master=plot_window)
+##    canvas.draw()
+##    canvas.get_tk_widget().pack(side=TOP,fill=BOTH,expand=1)
+##
+##    heatmap=ax[0].imshow(S,vmin=0, vmax=1, cmap='coolwarm', aspect='auto')
+##
+##    ax[0].set_xticks(range(Nc))
+##    ax[0].set_xticklabels(channels,fontsize=font_size(channels))
+##    ax[0].set_yticks(range(Nc))
+##    ax[0].set_yticklabels(channels,fontsize=font_size(channels))
+##
+##    ax_divider = make_axes_locatable(ax[0])
+##    cax = ax_divider.append_axes('right', size='7%', pad='2%')
+##    cb = fig.colorbar(heatmap, cax=cax, orientation='vertical')
+##
+##    G,community_labels,node_to_community,labels_dict,node_color=nt.Graph_communities_params(S,channels)
+##
+##    # See https://github.com/paulbrodersen/netgraph/blob/master/netgraph/_main.py for options
+##    Graph(G,ax=ax[1],node_size=5,node_label_offset=.1,node_color=node_color, node_labels=labels_dict,node_edge_width=0, edge_alpha=0.1, node_layout='community', node_layout_kwargs=dict(node_to_community=node_to_community),
+##    edge_layout='bundled', edge_layout_kwargs=dict(k=2000))
+##
+##    fig.suptitle('Coherence in Small Window Centered at t= '+str(np.round(time_mark,2))+ ' sec \n Coherence Communities: '+str(community_labels), fontsize=12)
 
 
 ############ EXAMPLE
