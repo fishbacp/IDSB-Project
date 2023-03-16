@@ -54,7 +54,7 @@ from pyqtgraph import PlotWidget, plot, AxisItem
 ##from HFO_count import hfo_count
 ##
 ##### MAIN CONNECTIVITY FUNCTIONS
-from functional_connectivity_tools import coherence_at_mark  #,functional_connectivities,like_brain_states,clustering_coefficient_matrix
+from functional_connectivity_tools import coherence_at_mark ,functional_connectivities #,like_brain_states,clustering_coefficient_matrix
 ##from effective_connectivity_tools import effective_connectivity,conn_count,swadtf_at_mark
 
 ################## FUNCTION TO CLOSE CURRENTLY OPEN WIDGETS
@@ -351,9 +351,9 @@ def _open():
     options |= QFileDialog.DontUseNativeDialog
     fileName, _ = QFileDialog.getOpenFileName(root, "Select File", "", "edf (*.edf)", options=options)
 
-    if fileName=='':
-        startup_background(root)
-        return
+##    if fileName=='':
+##        startup_background(root)
+##        return
 
     eeg=EEG(fileName)
     
@@ -504,19 +504,36 @@ def _mark_artifacts():
 ### Coherence heatmap using a window of width conn_win_value centered at selected green segment in raw plot
 
 def _coh_mark(eeg):    
-    if set(eeg.fig.mne.info['bads'])==set(eeg.channels):
+    if set(eeg.fig.mne.info['bads'])==set(eeg.channels) or len(eeg.fig.mne.info['ch_names'])-len(eeg.fig.mne.info['bads'])<2:
         error_dialog = QtWidgets.QErrorMessage(root)
-        error_dialog.showMessage('No Channels Selected! Click on desired channels')
+        error_dialog.showMessage('Not enough channels! Click on at least two')
         return
     if eeg.fig.mne.vline==None: 
         error_dialog = QtWidgets.QErrorMessage(root)
         error_dialog.showMessage('No time selected! Click at desired time value')
         return
     eeg.segment_loc=eeg.fig.mne.vline.value()
-    #### HERE IS WHERE WE'LL CALL coherence_at_mark(eeg)
-    #coherence_at_mark(eeg)
+    S=coherence_at_mark(eeg)
 
+    ######  A NEW WIDGET SHOULD APPEAR WITH A HEATMAP FOR ABOVE CHANNELS
 
+def _coh(eeg):
+    if set(eeg.fig.mne.info['bads'])==set(eeg.channels) or len(eeg.fig.mne.info['ch_names'])-len(eeg.fig.mne.info['bads'])<2:
+        error_dialog = QtWidgets.QErrorMessage(root)
+        error_dialog.showMessage('Not enough channels! Click on at least two')
+        return
+    if eeg.fig.mne.duration<eeg.conn_win_value:
+        error_dialog = QtWidgets.QErrorMessage(root)
+        error_dialog.showMessage('Selected interval is less than subwindow size from connectivity options! Expand interval!')
+        return
+    if eeg.fig.mne.duration>120:
+        error_dialog = QtWidgets.QErrorMessage(root)
+        error_dialog.showMessage('Connectivity animation limited to 120 seconds. Decrease interval length!')
+        return    
+    S_list,bar_list= functional_connectivities(eeg)    
+    #### A NEW WIDGET SHOULD APPEAR. IT WILL HAVE A SLIDER BUTTON AND CREATE AN ANIMATION. EACH FRAME
+    #### WILL DISPLAY THE HEATPLOT FOR A MATRIX FROM S_list AND A BAR PLOT FROM bar_list
+   
 
 
 ### Sequence of coherence matrices, where each is averaged over a frequency band. PSD for each channel also computed.
@@ -770,6 +787,10 @@ connectivity_menu = QMenu("Connectivity", menubar)
 coherenceAtMarkAction = QAction("Coherence at Mark", root)
 coherenceAtMarkAction.triggered.connect(lambda:  _coh_mark(eeg) )
 connectivity_menu.addAction(coherenceAtMarkAction)
+
+coherenceAction = QAction("Coherence", root)
+coherenceAction.triggered.connect(lambda:  _coh(eeg) )
+connectivity_menu.addAction(coherenceAction)
                                                        
 for action in connectivity_menu.actions(): action.setEnabled(False)
 menubar.addMenu(connectivity_menu)
